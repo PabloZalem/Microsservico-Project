@@ -2,6 +2,8 @@ package br.com.zalempablo.microsservico.pagamentos.controller;
 	
 import java.net.URI;
 
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +33,9 @@ public class PagamentoController {
 	@Autowired
 	private PagamentoService pagamentoService;
 	
+	@Autowired
+	private RabbitTemplate rabbitTemplate;
+	
 	@GetMapping
 	public Page<PagamentoDTO> listar(@PageableDefault(size = 10) Pageable paginacao) {
 	        return pagamentoService.obterTodos((org.springframework.data.domain.Pageable) paginacao);
@@ -48,6 +53,8 @@ public class PagamentoController {
 	        PagamentoDTO pagamento = pagamentoService.criarPagamento(dto);
 	        URI endereco = uriBuilder.path("/pagamentos/{id}").buildAndExpand(pagamento.getId()).toUri();
 
+	        //Message message = new Message(("Criei um pagamento com o Id" + pagamento.getId()).getBytes());
+	        rabbitTemplate.convertAndSend("pagamentos.ex","", pagamento);
 	        return ResponseEntity.created(endereco).body(pagamento);
 	    }
 	    
